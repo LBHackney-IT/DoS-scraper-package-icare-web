@@ -45,8 +45,7 @@ class ICareWebPageScraperServiceProvider extends \Illuminate\Support\ServiceProv
      */
     public function boot()
     {
-//        $this->loadRoutesFrom(__DIR__ . '/../routes.php');
-        $this->enableRoutes('../routes.php');
+        $this->enableRoutes('routes.php');
     }
 
     /**
