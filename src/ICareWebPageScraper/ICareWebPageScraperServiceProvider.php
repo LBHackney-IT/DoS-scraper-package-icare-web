@@ -2,6 +2,7 @@
 
 namespace ICareWebPageScraper;
 
+use App\Plugins\WebPageScraper\Scraper\WebPageScraperInterface;
 use ReflectionClass;
 use ReflectionException;
 
@@ -10,7 +11,7 @@ use ReflectionException;
  *
  * @package ICareWebPageScraper\Laravel
  */
-class ICareWebPageScraperServiceProvider extends \Illuminate\Support\ServiceProvider
+class ICareWebPageScraperServiceProvider extends \Illuminate\Support\ServiceProvider implements WebPageScraperInterface
 {
     /**
      * Scraper package name.

@@ -13,6 +13,11 @@ use App\Plugins\WebPageScraper\Http\WebPageHttpServiceException;
 class ICareWebPageScraperPluginHelloController extends AbstractICareWebPageScraperPluginController
 {
     /**
+     * This controller does not need to use a selector.
+     */
+    protected $selectorRequired = false;
+
+    /**
      * Hello
      *
      * @return \Illuminate\Http\JsonResponse
