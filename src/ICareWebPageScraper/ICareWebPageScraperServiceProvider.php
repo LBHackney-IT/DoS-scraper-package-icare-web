@@ -2,16 +2,15 @@
 
 namespace ICareWebPageScraper;
 
+use App\Plugins\WebPageScraper\AbstractWebPageScraperServiceProvider;
 use App\Plugins\WebPageScraper\Scraper\WebPageScraperInterface;
-use ReflectionClass;
-use ReflectionException;
 
 /**
  * Class ServiceProvider
  *
  * @package ICareWebPageScraper\Laravel
  */
-class ICareWebPageScraperServiceProvider extends \Illuminate\Support\ServiceProvider implements WebPageScraperInterface
+class ICareWebPageScraperServiceProvider extends AbstractWebPageScraperServiceProvider implements WebPageScraperInterface
 {
     /**
      * Scraper package name.
@@ -32,21 +31,18 @@ class ICareWebPageScraperServiceProvider extends \Illuminate\Support\ServiceProv
      *
      * @var string
      */
-    public $version = '0.1';
-
-    /**
-     * @var $this
-     */
-    private $reflector = null;
+    public $version = '0.1.4';
 
     /**
      * Implementation of boot method.
      *
      * @return void
+     *
+     * @throws ReflectionException
      */
     public function boot()
     {
-        $this->enableRoutes('routes.php');
+        parent::boot();
     }
 
     /**
@@ -57,55 +53,5 @@ class ICareWebPageScraperServiceProvider extends \Illuminate\Support\ServiceProv
     public function register()
     {
         // Needed for Laravel < 5.3 compatibility
-    }
-
-    /**
-     * Enable routes for this plugin.
-     *
-     * @param string $path
-     */
-    protected function enableRoutes($path = 'routes.php')
-    {
-        $this->app->router->group(
-            ['namespace' => $this->getPluginControllerNamespace()],
-            function ($router) use ($path) {
-                require __DIR__ . DIRECTORY_SEPARATOR . $path;
-            }
-        );
-    }
-
-
-    /**
-     * Get the plugin controller namespace.
-     *
-     * @return string
-     */
-    protected function getPluginControllerNamespace()
-    {
-        try {
-            $reflector = $this->getReflector();
-            $baseDir = str_replace($reflector->getShortName(), '', $reflector->getName());
-
-            return $baseDir . 'Http\\Controllers';
-        } catch (ReflectionException $e) {
-            dd('Plugin namespace could not be determined: "' . $e->getMessage() . '"');
-            exit;
-        }
-    }
-
-    /**
-     * Get the class reflector.
-     *
-     * @return \ReflectionClass
-     *
-     * @throws \ReflectionException
-     */
-    private function getReflector()
-    {
-        if (is_null($this->reflector)) {
-            $this->reflector = new ReflectionClass($this);
-        }
-
-        return $this->reflector;
     }
 }
