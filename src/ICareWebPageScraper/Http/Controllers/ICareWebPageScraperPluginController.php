@@ -68,27 +68,11 @@ class ICareWebPageScraperPluginController extends AbstractICareWebPageScraperPlu
             $crawler = new Crawler($html);
             // Page title.
             $build['label'] = $crawler->filter('#content > h1')->text();
-            $dom = [];
-            if (!empty($this->query['selector'])) {
-                $build['selector'] = $this->query['selector'];
-                try {
-                    $selected = $crawler->filter($this->query['selector']);
-                    $dom = $this->extractor($selected);
-                } catch (\InvalidArgumentException $e) {
-                    $build['message'] = sprintf(
-                        'No data could be retrieved with the current selector: %s',
-                        $this->query['selector']
-                    );
-                    $status = 422;
-                }
-            } else {
-                $build['message'] = 'Please set a CSS selector';
-                $build['selector'] = null;
-                $status = 400;
-            }
-            $build['code'] = $status;
+            // Get the text passed by the CSS selector(s) in the query parameters
+            $dom = $this->selector($crawler);
+            $build['code'] = $dom['status'];
             $build['response'] = [
-                'dom' => $dom,
+                'dom' => empty($dom['items']) ? $dom : $dom['items'],
                 'headers' => $response->getResponseHeaders(),
             ];
             return response()->json($build, $status);
