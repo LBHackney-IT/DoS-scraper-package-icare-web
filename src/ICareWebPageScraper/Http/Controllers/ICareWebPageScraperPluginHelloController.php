@@ -27,13 +27,13 @@ class ICareWebPageScraperPluginHelloController extends AbstractICareWebPageScrap
         try {
             $this->makeService();
             $this->service->webPageCheckConnection();
-            return response()->json(
-                [
-                    'message' => $this->service->getResponse()->getStatus(),
-                    'code' => $this->service->getResponse()->getStatusCode(),
-                    'url' => $this->service->getUrl(),
-                ]
-            );
+            $data = [
+                'message' => $this->service->getResponse()->getStatus(),
+                'code' => $this->service->getResponse()->getStatusCode(),
+                'url' => $this->service->getUrl(),
+            ];
+            $this->queue->push('icare_hello', $data, $this->getKafkaQueueName());
+            return response()->json($data);
         } catch (HttpDriverClientException $e) {
             return $this->exceptionResponse($e);
         } catch (WebPageHttpServiceException $e) {
