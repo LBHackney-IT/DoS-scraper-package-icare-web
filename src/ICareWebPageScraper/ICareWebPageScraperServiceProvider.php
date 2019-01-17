@@ -66,7 +66,7 @@ class ICareWebPageScraperServiceProvider extends AbstractWebPageScraperServicePr
             ],
             'item/{id}' => [
                 'description' => 'Scrape an service item from the iCare website.',
-                'controller' => 'ICareWebPageScraper\\Http\\Controllers\\ICareWebPageScraperPluginController@retrieve',
+                'controller' => 'ICareWebPageScraper\\Http\\Controllers\\ICareWebPageScraperPluginServiceController@retrieve',
                 'requires' => [
                     'id',
                 ],
@@ -82,8 +82,12 @@ class ICareWebPageScraperServiceProvider extends AbstractWebPageScraperServicePr
                         'selector' => [
                             'type' => 'array',
                             'description' => 'CSS selector',
-                            'example' => 'selector[]=.service_contact dd:nth-child(2)&selector[]=.service_contact dd:nth-child(4)&selector[]=dd:nth-child(6) > a',
-                        ]
+                            'example' => [
+                                '.service_contact dd:nth-child(2)',
+                                '.service_contact dd:nth-child(4)',
+                                'dd:nth-child(6) > a',
+                            ],
+                        ],
                     ],
                 ],
             ],

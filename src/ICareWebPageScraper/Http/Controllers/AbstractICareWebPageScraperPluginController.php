@@ -24,17 +24,12 @@ abstract class AbstractICareWebPageScraperPluginController extends AbstractWebPa
      */
     protected $service;
 
-    public function __construct(Request $request, $conf = [])
-    {
-        $conf = array_merge(['base_url' => $this->baseUrl], $conf);
-        parent::__construct($request, $conf);
-    }
-
     /**
      * {@inheritdoc}
      */
     protected function makeService()
     {
+        $this->conf = array_merge(['base_url' => $this->baseUrl, 'path' => $this->path], $this->conf);
         $driver = new ICareWebPageHttpDriver($this->conf);
         $this->service = new ICareWebPageHttpService($driver, $this->conf);
     }

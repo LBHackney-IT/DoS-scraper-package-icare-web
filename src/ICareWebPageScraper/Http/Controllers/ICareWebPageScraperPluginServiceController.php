@@ -6,6 +6,8 @@ use App\Http\Driver\Exception\HttpDriverClientException;
 use App\Http\Driver\Exception\HttpDriverServerException;
 use App\Http\Request\HttpInvalidRequestException;
 use App\Plugins\WebPageScraper\Http\WebPageHttpServiceException;
+use App\Plugins\WebPageScraper\Service\ParameterExtractor\ParameterExtractJobQuery;
+use http\Exception\InvalidArgumentException;
 use ICareWebPageScraper\Http\Request\GetICareServiceRequest;
 use Illuminate\Http\Request;
 use Symfony\Component\DomCrawler\Crawler;
@@ -15,7 +17,7 @@ use Symfony\Component\DomCrawler\Crawler;
  *
  * @package App\Scraper\ICareWebPageScraper\Http\Controllers
  */
-class ICareWebPageScraperPluginController extends AbstractICareWebPageScraperPluginController
+class ICareWebPageScraperPluginServiceController extends AbstractICareWebPageScraperPluginController
 {
     /**
      * @var string - The base path on the iCare website.
@@ -23,37 +25,40 @@ class ICareWebPageScraperPluginController extends AbstractICareWebPageScraperPlu
     protected $path = '/kb5/hackney/asch/service.page';
 
     /**
-     * This controller does not need to use a selector.
+     * @var string
      */
-    protected $selectorRequired = true;
+    protected $kafkaProduceQueue = 'NewQueue';
+
+    protected $parameters;
 
     /**
      * ICareWebPageScraperPluginController constructor.
-     *
-     * @param Request $request
-     * @param array $conf
      *
      * @throws HttpInvalidRequestException
      */
     public function __construct()
     {
-        parent::__construct();
-        $this->conf['path'] = $this->path;
+
     }
 
     /**
      * Retrieve stuff from a service page on the Hackney iCare website.
      *
-     * @param Request $request
-     * @param string $id – Service id on the Hackney iCare web site.
+     * @param array $parameters – Array of task parameters.
      *
      * @return \Illuminate\Http\JsonResponse
+     *
+     * @throws InvalidArgumentException
      */
-    public function retrieve(Request $request, $id)
+    public function retrieve($parameters)
     {
         try {
+            if (empty($parameters['path']['id'])) {
+                throw new InvalidArgumentException('ID parameter missing');
+            }
+            $this->parameters = $parameters;
             $this->readyForKafka();
-            $this->request = $request;
+            $this->setKafkaQueueName($this->kafkaProduceQueue);
             $this->extractQuery();
             $this->setQuery();
 
@@ -61,6 +66,7 @@ class ICareWebPageScraperPluginController extends AbstractICareWebPageScraperPlu
                 throw new HttpInvalidRequestException('Please set a CSS selector', 422);
             }
 
+            $id = $this->parameters['path']['id'];
             // Create the request/response service.
             $this->makeService();
             // Prepare the request.
@@ -90,6 +96,7 @@ class ICareWebPageScraperPluginController extends AbstractICareWebPageScraperPlu
                 'dom' => empty($dom['items']) ? $dom : $dom['items'],
                 'headers' => $response->getResponseHeaders(),
             ];
+            $this->queue->push('WebPageScrape', $build, 'NewQueue');
             return response()->json($build, $status);
         } catch (HttpDriverServerException $e) {
             return $this->exceptionResponse($e);
@@ -102,31 +109,9 @@ class ICareWebPageScraperPluginController extends AbstractICareWebPageScraperPlu
         }
     }
 
-
-    public function create(Request$request, $id)
+    protected function extractQuery()
     {
-        try {
-            $this->readyForKafka();
-            $this->request = $request;
-            $this->extractQuery();
-            $this->setQuery();
-//            $this->makeService();
-            $data = [
-                'package' => 'icare_webpage_scraper_package',
-                'operation' => 'item/{id}',
-                'parameters' => [
-                    'path' => [
-                        'id' => $id,
-                    ],
-                    'query' => $this->query,
-                ],
-            ];
-            $this->queue->push('App\\Jobs\\ProcessWebPageScrapeJob', $data, $this->getKafkaQueueName());
-            return response()->json($data);
-        } catch (HttpDriverClientException $e) {
-            return $this->exceptionResponse($e);
-        } catch (WebPageHttpServiceException $e) {
-            return $this->exceptionResponse($e);
-        }
+        $queryExtractor = new ParameterExtractJobQuery($this->parameters);
+        $this->query = $queryExtractor->getQuery();
     }
 }

@@ -4,6 +4,7 @@ namespace ICareWebPageScraper\Http\Controllers;
 
 use App\Http\Driver\Exception\HttpDriverClientException;
 use App\Plugins\WebPageScraper\Http\WebPageHttpServiceException;
+use Illuminate\Http\Request;
 use Rapide\LaravelQueueKafka\Queue\Jobs\KafkaJob;
 use RdKafa\Message;
 use RdKafka\Topic;
@@ -15,11 +16,15 @@ use RdKafka\Topic;
  */
 class ICareWebPageScraperPluginHelloController extends AbstractICareWebPageScraperPluginController
 {
-    
     /**
      * This controller does not need to use a selector.
      */
     protected $selectorRequired = false;
+
+    /**
+     * @var string
+     */
+    protected $kafkaProduceQueue = 'NewQueue';
 
     /**
      * Hello
@@ -29,7 +34,8 @@ class ICareWebPageScraperPluginHelloController extends AbstractICareWebPageScrap
     public function hello()
     {
         try {
-            $this->setKafkaQueueName('NewQueue');
+            $this->readyForKafka();
+            $this->setKafkaQueueName($this->kafkaProduceQueue);
             $this->makeService();
             $this->service->webPageCheckConnection();
             $data = [
@@ -47,28 +53,11 @@ class ICareWebPageScraperPluginHelloController extends AbstractICareWebPageScrap
         }
     }
 
-    public function view() {
-        try {
-            $this->makeService();
-            $job = $this->queue->pop();
-            $data = [
-                'queue' => [
-                    'config' => $this->queue->getConfig(),
-                    'data' => is_null($job) ? null : $job->payload(),
-                ],
-            ];
-            $response = response()->json($data);
-            return $response;
-        } catch (HttpDriverClientException $e) {
-            return $this->exceptionResponse($e);
-        } catch (WebPageHttpServiceException $e) {
-            return $this->exceptionResponse($e);
-        }
-    }
-
-    public function create()
+    public function create(Request $request)
     {
         try {
+            $this->readyForKafka();
+            $this->request = $request;
             $this->makeService();
             $data = [
                 'package' => 'icare_webpage_scraper_package',
